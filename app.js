@@ -1,23 +1,18 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
-// TODO: Load the credentials from the 'credentials.json' file
-// HINT: Use the 'fs' module to read and parse the file
-const credentials = TODO;
+const credentials = JSON.parse(fs.readFileSync('credentials.json'));
 
 (async () => {
-    // TODO: Launch a browser instance and open a new page
-    const browser = TODO;
-    const page = TODO;
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
 
     // Navigate to GitHub login page
     await page.goto('https://github.com/login');
 
-    // TODO: Login to GitHub using the provided credentials
-    // HINT: Use the 'type' method to input username and password, then click on the submit button
-    await TODO;
-    await TODO;
-    await TODO;
+    await page.type('#login_field', credentials.username);
+    await page.type('#password', credentials.password);
+    await page.click('input[type="submit"]');
 
     // Wait for successful login
     await page.waitForSelector('.avatar.circle');
@@ -29,24 +24,21 @@ const credentials = TODO;
 
     for (const repo of repositories) {
         await page.goto(`https://github.com/${repo}`);
-
-        // TODO: Star the repository
-        // HINT: Use selectors to identify and click on the star button
-        await TODO;
-        await TODO; // This timeout helps ensure that the action is fully processed
+        
+        await page.waitForSelector('#repository-container-header button');
+        await page.click('#repository-container-header button');
+        await page.waitForTimeout(1000);
     }
 
-    // TODO: Navigate to the user's starred repositories page
-    await page.goto(TODO);
+    await page.goto(`https://github.com/${actualUsername}?tab=stars`);
 
-    // TODO: Click on the "Create list" button
-    await TODO;
-    await TODO;
+    await page.waitForSelector('button[aria-label="Create list"]');
+    await page.click('button[aria-label="Create list"]');
 
-    // TODO: Create a list named "Node Libraries"
-    // HINT: Wait for the input field and type the list name
-    await TODO;
-    await TODO;
+    await page.waitForTimeout(1000);
+
+    await page.waitForSelector('input[name="name"]');
+    await page.type('input[name="name"]', 'Node Libraries');
 
     // Wait for buttons to become visible
     await page.waitForTimeout(1000);
@@ -64,14 +56,14 @@ const credentials = TODO;
     // Allow some time for the list creation process
     await page.waitForTimeout(2000);
 
+    const dropdownSelector = 'details summary[aria-label="Add to list"]';
+
     for (const repo of repositories) {
         await page.goto(`https://github.com/${repo}`);
+        await page.waitForSelector(dropdownSelector);
+        await page.click(dropdownSelector);
+        await page.waitForTimeout(1000);
 
-        // TODO: Add this repository to the "Node Libraries" list
-        // HINT: Open the dropdown, wait for it to load, and find the list by its name
-        await TODO;
-        await TODO;
-        await TODO;
         const lists = await page.$$('.js-user-list-menu-form');
 
         for (const list of lists) {
